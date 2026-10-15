@@ -130,6 +130,13 @@ else
 	WORKDIR="$WORKDIR/sparkybackup-sys"
 fi
 
+# the ISO, its sums, the package list and the log go to OUTDIR; the work tree stays in WORKDIR
+if [ "$OUTDIR" = "" ]
+then
+	OUTDIR="$WORKDIR"
+fi
+mkdir -p $OUTDIR
+
 if [ "$LIVECDLABEL" = "" ]
 then
 	LIVECDLABEL="Custom Live CD"
@@ -1182,8 +1189,8 @@ function iso {
 	sleep 1
 
 	# Step 6 - Make the ISO file
-	echo "$LOCAL20 $CUSTOMISO $LOCAL21 $WORKDIR $LOCAL31 $CREATEISO"
-	log_info "Creating $CUSTOMISO in $WORKDIR using $CREATEISO"
+	echo "$LOCAL20 $CUSTOMISO $LOCAL21 $OUTDIR $LOCAL31 $CREATEISO"
+	log_info "Creating $CUSTOMISO in $OUTDIR using $CREATEISO"
 	cd $WORKDIR/ISOTMP
 
 	if [ "$ARCH" = "" ]
@@ -1204,16 +1211,16 @@ function iso {
 		echo "Creating the iso file using xorriso"
 		# xorriso's own hybrid layout, as Debian's live images have it: BIOS boot from a stick through isohdpfx.bin,
 		# partition 1 from LBA 64 so the GPT has room, the EFI image as a GPT and MBR partition, and an Apple partition map
-		$CREATEISO -as mkisofs -R -r -J -joliet-long -l -cache-inodes -iso-level 3 -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin -partition_offset 16 -V "$MYVOLID" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table $EFI_PARAMS -isohybrid-gpt-basdat -isohybrid-apm-hfsplus -o "$WORKDIR/$CUSTOMISO" "$WORKDIR/ISOTMP"
+		$CREATEISO -as mkisofs -R -r -J -joliet-long -l -cache-inodes -iso-level 3 -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin -partition_offset 16 -V "$MYVOLID" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table $EFI_PARAMS -isohybrid-gpt-basdat -isohybrid-apm-hfsplus -o "$OUTDIR/$CUSTOMISO" "$WORKDIR/ISOTMP"
 	else
 		# create iso image via genisoimage which can be larger than 4GB (xorriso has to be removed from your system)
 		log_info "Creating $MYARCH iso image with $CREATEISO"
 		echo "Creating the iso file using genisoimage"
-		$CREATEISO -r -V "$MYVOLID" -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table $EFI_PARAMS -allow-limited-size -udf -o $WORKDIR/$CUSTOMISO "$WORKDIR/ISOTMP"
+		$CREATEISO -r -V "$MYVOLID" -J -l -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table $EFI_PARAMS -allow-limited-size -udf -o $OUTDIR/$CUSTOMISO "$WORKDIR/ISOTMP"
 	fi
 
 	# check to see if the iso image exists
-	if [ ! -f "$WORKDIR/$CUSTOMISO" ]
+	if [ ! -f "$OUTDIR/$CUSTOMISO" ]
 	then
 		echo "The iso image is missing... exiting..."
 		log_info "The iso image is missing... exiting..."
@@ -1225,47 +1232,51 @@ function iso {
 	then
 		echo "$LOCAL33"
 		log_info "Creating iso into a hybrid image so it can be imaged to a usb key or burned to optical media"
-		isohybrid -u $WORKDIR/$CUSTOMISO
+		isohybrid -u $OUTDIR/$CUSTOMISO
 	fi
-	ISOSIZE=`ls -s $WORKDIR/$CUSTOMISO | awk -F " " '{print $1}'`
+	ISOSIZE=`ls -s $OUTDIR/$CUSTOMISO | awk -F " " '{print $1}'`
 	log_debug "iso size: $ISOSIZE"
 
 	# create the md5, sha1, sha256 and sha512 sums file so the user doesn't have to - this is good so the iso file can later be tested to ensure it hasn't become corrupted
-	echo "$LOCAL20 $CUSTOMISO.allsums.txt $LOCAL21 $WORKDIR"
-	log_info "Creating $CUSTOMISO.allsums.txt in $WORKDIR"
+	echo "$LOCAL20 $CUSTOMISO.allsums.txt $LOCAL21 $OUTDIR"
+	log_info "Creating $CUSTOMISO.allsums.txt in $OUTDIR"
 
-	cd $WORKDIR
-	echo "# md5sum:" >> $WORKDIR/$CUSTOMISO.allsums.txt
-	md5sum $CUSTOMISO >> $WORKDIR/$CUSTOMISO.allsums.txt
+	cd $OUTDIR
+	echo "# md5sum:" >> $OUTDIR/$CUSTOMISO.allsums.txt
+	md5sum $CUSTOMISO >> $OUTDIR/$CUSTOMISO.allsums.txt
 	echo "md5sum $LOCAL34"
 	log_info "md5sum done"
 
-	echo "" >> $WORKDIR/$CUSTOMISO.allsums.txt
-	echo "# sha1sum:" >> $WORKDIR/$CUSTOMISO.allsums.txt
-	sha1sum $CUSTOMISO >> $WORKDIR/$CUSTOMISO.allsums.txt
+	echo "" >> $OUTDIR/$CUSTOMISO.allsums.txt
+	echo "# sha1sum:" >> $OUTDIR/$CUSTOMISO.allsums.txt
+	sha1sum $CUSTOMISO >> $OUTDIR/$CUSTOMISO.allsums.txt
 	echo "sha1sum $LOCAL34"
 	log_info "sha1sum done"
 
-	echo "" >> $WORKDIR/$CUSTOMISO.allsums.txt
-	echo "# sha256sum:" >> $WORKDIR/$CUSTOMISO.allsums.txt
-	sha256sum $CUSTOMISO >> $WORKDIR/$CUSTOMISO.allsums.txt
+	echo "" >> $OUTDIR/$CUSTOMISO.allsums.txt
+	echo "# sha256sum:" >> $OUTDIR/$CUSTOMISO.allsums.txt
+	sha256sum $CUSTOMISO >> $OUTDIR/$CUSTOMISO.allsums.txt
 	echo "sha256sum $LOCAL34"
 	log_info "sha256sum done"
 
-	echo "" >> $WORKDIR/$CUSTOMISO.allsums.txt
-	echo "# sha512sum:" >> $WORKDIR/$CUSTOMISO.allsums.txt
-	sha512sum $CUSTOMISO >> $WORKDIR/$CUSTOMISO.allsums.txt
+	echo "" >> $OUTDIR/$CUSTOMISO.allsums.txt
+	echo "# sha512sum:" >> $OUTDIR/$CUSTOMISO.allsums.txt
+	sha512sum $CUSTOMISO >> $OUTDIR/$CUSTOMISO.allsums.txt
 	echo "sha512sum $LOCAL34"
 	log_info "sha512sum done"
 
 	sleep 1
 
-	echo "$WORKDIR/$CUSTOMISO $LOCAL35"
+	echo "$OUTDIR/$CUSTOMISO $LOCAL35"
 	echo "$LOCAL36"
-	log_info "$WORKDIR/$CUSTOMISO is ready to be burned or tested in a virtual machine."
+	log_info "$OUTDIR/$CUSTOMISO is ready to be burned or tested in a virtual machine."
 	log_info "Check the size and if it is larger than 700MB you will need to burn it to a DVD or copy to a USB stick."
-	ls -hs $WORKDIR/$CUSTOMISO
-	ls -hs $WORKDIR/$CUSTOMISO >> $WORKDIR/sparkybackup.log
+	ls -hs $OUTDIR/$CUSTOMISO
+	ls -hs $OUTDIR/$CUSTOMISO >> $WORKDIR/sparkybackup.log
+	if [ "$OUTDIR" != "$WORKDIR" ]
+	then
+		cp $WORKDIR/$CUSTOMISO.package-list.txt $WORKDIR/sparkybackup.log $OUTDIR/
+	fi
 	echo "$LOCAL37 'sudo sparkybackup clean' $LOCAL38 $CUSTOMISO"
 	echo " "
 	log_info "It is recommended to run 'sudo sparkybackup clean' once you have tested the $CUSTOMISO"
