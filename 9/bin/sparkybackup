@@ -112,6 +112,12 @@ fi
 # load the sparkybackup.conf file 
 . /etc/sparkybackup/sparkybackup.conf
 
+# the Sparky Stereo OS profile (sparkybackup-stereo) reads its own settings on top
+if [ "$SPARKYBACKUP_PROFILE" = "stereo" ]
+then
+	. /etc/sparkybackup/sparkybackup-stereo.conf
+fi
+
 # if the sparkybackup.conf file is incorrect or missing, make sure to set defaults
 if [ "$LIVEUSER" = "" ]
 then
@@ -323,6 +329,11 @@ function efi_boot_files {
 	cp /usr/lib/shim/shimx64.efi.signed $EFIBOOT/bootx64.efi
 	cp /usr/lib/shim/mmx64.efi.signed $EFIBOOT/mmx64.efi
 	cp /usr/lib/grub/x86_64-efi-signed/gcdx64.efi.signed $EFIBOOT/grubx64.efi
+	# a Machine Owner Key certificate for MokManager's "Enroll key from disk", which lists the EFI image only
+	if [ "$MOKCERT" != "" ]
+	then
+		cp $MOKCERT $EFIBOOT/
+	fi
 	# the signed GRUB has its modules built in; the 2.06 module folder does not fit it
 	rm -rf $WORKDIR/ISOTMP/boot/grub/x86_64-efi
 	sed -i -e '/insmod efi_uga/d' -e '/insmod video_bochs/d' -e '/insmod video_cirrus/d' $WORKDIR/ISOTMP/boot/grub/config.cfg
@@ -332,7 +343,7 @@ set prefix=(\$root)/boot/grub
 configfile (\$root)/boot/grub/grub.cfg
 FOO
 	EFISIZE=16384
-	for f in $EFIBOOT/*.efi $WORKDIR/efi-grub.cfg
+	for f in $EFIBOOT/* $WORKDIR/efi-grub.cfg
 	do
 		EFISIZE=$((EFISIZE + `stat -c %s $f`))
 	done
@@ -340,7 +351,7 @@ FOO
 	rm -f $EFIIMG
 	mkfs.msdos -C $EFIIMG $EFIBLOCKS >/dev/null
 	mmd -i $EFIIMG ::EFI ::EFI/boot ::boot ::boot/grub
-	mcopy -m -i $EFIIMG $EFIBOOT/*.efi ::EFI/boot
+	mcopy -m -i $EFIIMG $EFIBOOT/* ::EFI/boot
 	mcopy -m -i $EFIIMG $WORKDIR/efi-grub.cfg ::boot/grub/grub.cfg
 	log_info "efi.img: $EFIBLOCKS KiB with `ls $EFIBOOT | tr '\n' ' '`"
 }
@@ -548,6 +559,11 @@ function cdfs {
 	# copy isolinux files
 	mkdir -p $WORKDIR/ISOTMP/isolinux
 	cp /usr/lib/sparkybackup/isolinux/* $WORKDIR/ISOTMP/isolinux/
+	# a profile's own boot menus and disk info
+	if [ "$BOOTMENUS" != "" ]
+	then
+		cp $BOOTMENUS/isolinux/* $WORKDIR/ISOTMP/isolinux/
+	fi
 
 	# copy memtest86+ and hdt to all iso images
 	#if [ -f /home/extra/memtest86.bin ]
@@ -784,6 +800,10 @@ function cdfs {
 	fi
 
 	ISOLABEL="$LIVECDLABEL $LIVENUMBER $LIVEVERSION $LIVEARCH"
+	if [ "$ISOLABELFULL" != "" ]
+	then
+		ISOLABEL="$ISOLABELFULL"
+	fi
 	sed -i -e 's/__LIVECDLABEL__/'"$ISOLABEL"'/g' $WORKDIR/ISOTMP/isolinux/isolinux.cfg
 	sed -i -e 's/__LIVELABEL__/'"$LIVECDLABEL"'/g' $WORKDIR/ISOTMP/isolinux/isolinux.cfg
 	
@@ -797,6 +817,10 @@ function cdfs {
 	#then
 		rsync -a /usr/lib/sparkybackup/boot $WORKDIR/ISOTMP/
 		rsync -a /usr/lib/sparkybackup/EFI $WORKDIR/ISOTMP/
+		if [ "$BOOTMENUS" != "" ]
+		then
+			rsync -a $BOOTMENUS/boot/ $WORKDIR/ISOTMP/boot/
+		fi
 		efi_boot_files
 			
 		if [ "$TESTXORRISO" = "" ]
@@ -979,6 +1003,10 @@ FOO
 	fi
 	mkdir -p $WORKDIR/ISOTMP/.disk 
 	cp /usr/lib/sparkybackup/.disk/* $WORKDIR/ISOTMP/.disk
+	if [ "$BOOTMENUS" != "" ] && [ -d $BOOTMENUS/.disk ]
+	then
+		cp $BOOTMENUS/.disk/* $WORKDIR/ISOTMP/.disk
+	fi
 
 	# fix sddm conf
 	if [ -f /lib/live/config/0085-sddm ]
