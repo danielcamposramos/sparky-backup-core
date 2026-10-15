@@ -305,6 +305,39 @@ log_info "Creating $CUSTOMISO.package-list.txt in $WORKDIR"
 dpkg-query -l > $WORKDIR/$CUSTOMISO.package-list.txt
 log_debug "------------------------------------------------------"
 
+# efi_boot_files usage: efi_boot_files (no parameters)
+# shim, MokManager and the signed GRUB (its removable-media build) are taken from the installed
+# shim-signed and grub-efi-amd64-signed packages at every build, so the image follows Debian's
+# SBAT level and the Microsoft UEFI CA 2023 signatures; efi.img is made to fit them
+function efi_boot_files {
+	EFIBOOT="$WORKDIR/ISOTMP/EFI/boot"
+	EFIIMG="$WORKDIR/ISOTMP/boot/grub/efi.img"
+	mkdir -p $EFIBOOT
+	cp /usr/lib/shim/shimx64.efi.signed $EFIBOOT/bootx64.efi
+	cp /usr/lib/shim/mmx64.efi.signed $EFIBOOT/mmx64.efi
+	cp /usr/lib/grub/x86_64-efi-signed/gcdx64.efi.signed $EFIBOOT/grubx64.efi
+	# the signed GRUB has its modules built in; the 2.06 module folder does not fit it
+	rm -rf $WORKDIR/ISOTMP/boot/grub/x86_64-efi
+	sed -i -e '/insmod efi_uga/d' -e '/insmod video_bochs/d' -e '/insmod video_cirrus/d' $WORKDIR/ISOTMP/boot/grub/config.cfg
+	cat > $WORKDIR/efi-grub.cfg <<FOO
+search --set=root --file /.disk/info
+set prefix=(\$root)/boot/grub
+configfile (\$root)/boot/grub/grub.cfg
+FOO
+	EFISIZE=16384
+	for f in $EFIBOOT/*.efi $WORKDIR/efi-grub.cfg
+	do
+		EFISIZE=$((EFISIZE + `stat -c %s $f`))
+	done
+	EFIBLOCKS=$(((EFISIZE / 1024 + 55) / 32 * 32))
+	rm -f $EFIIMG
+	mkfs.msdos -C $EFIIMG $EFIBLOCKS >/dev/null
+	mmd -i $EFIIMG ::EFI ::EFI/boot ::boot ::boot/grub
+	mcopy -m -i $EFIIMG $EFIBOOT/*.efi ::EFI/boot
+	mcopy -m -i $EFIIMG $WORKDIR/efi-grub.cfg ::boot/grub/grub.cfg
+	log_info "efi.img: $EFIBLOCKS KiB with `ls $EFIBOOT | tr '\n' ' '`"
+}
+
 function cdfs {
 	# Step 3 - Create the CD tree in $WORKDIR/ISOTMP
 	echo "$LOCAL22 $WORKDIR $LOCAL23"
@@ -758,7 +791,7 @@ function cdfs {
 	#then
 		rsync -a /usr/lib/sparkybackup/boot $WORKDIR/ISOTMP/
 		rsync -a /usr/lib/sparkybackup/EFI $WORKDIR/ISOTMP/
-		rsync -a /usr/lib/sparkybackup/efi.img $WORKDIR/ISOTMP/
+		efi_boot_files
 			
 		if [ "$TESTXORRISO" = "" ]
 		then

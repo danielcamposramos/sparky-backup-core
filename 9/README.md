@@ -30,6 +30,7 @@ dpkg
 findutils
 gawk
 grep
+grub-efi-amd64-signed
 hwdata
 iputils-ping
 keyboard-configuration
@@ -37,12 +38,14 @@ laptop-detect
 live-boot, live-config, live-config-systemd, live-boot-initramfs-tools
 locales
 mount
+mtools
 nano
 os-prober
 parted
 passwd
 rsync
 sed
+shim-signed
 sparky-backup-desktop (>= 20180729) | sparky-server
 sparky-info
 squashfs-tools
