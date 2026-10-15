@@ -1047,6 +1047,28 @@ FOO
 		REALFOLDERS=`echo $REALFOLDERS | sed -e 's!'"$e"'!!g'`
 	done
 
+	# Lean Code (the Sparky Stereo OS profile; default off elsewhere): projection happens in the packages and at
+	# install time (dpkg-stereo), never here; this stage reads the image and reports its coverage
+	if [ "$LEANCODE" = "yes" ]
+	then
+		if [ ! -x /usr/bin/sparkybackup-leancode ]
+		then
+			echo "Lean Code is required by this profile, but sparkybackup-leancode is missing... exiting..."
+			log_info "Lean Code is required by this profile, but sparkybackup-leancode is missing"
+			exit 1
+		fi
+		echo "Lean Code: measuring the image's coverage"
+		log_info "Lean Code: measuring the image's coverage"
+		/usr/bin/sparkybackup-leancode $WORKDIR/lean-code-manifest.tsv $WORKDIR/ISOTMP/live/lean-code-coverage.txt $REALFOLDERS >> $WORKDIR/sparkybackup.log
+		if [ "$?" != "0" ]
+		then
+			echo "Lean Code: the image is NOT compliant (incomplete coverage), see live/lean-code-coverage.txt"
+			log_info "Lean Code: the image is NOT compliant (incomplete coverage)"
+		fi
+		xz -T1 -f $WORKDIR/lean-code-manifest.tsv
+		cp $WORKDIR/lean-code-manifest.tsv.xz $OUTDIR/$CUSTOMISO.lean-code-manifest.tsv.xz
+	fi
+
 	mksquashfs $REALFOLDERS $WORKDIR/ISOTMP/live/filesystem.squashfs -no-duplicates $SQUASHFSOPTS $SQUASHEXCLUDES 2>> $WORKDIR/sparkybackup.log
 
 	sleep 1

@@ -1,0 +1,158 @@
+#!/usr/bin/python3
+
+# Sparky Backup Core Stereo: the Lean Code stage of the Sparky Stereo OS profile
+# Created by Paweł "pavroo" Pijanowski and Daniel Ramos (Capitain Jack) 2026/10/15
+# Copyright 2026 under the GNU GPL3 License
+# Last update 2026/10/15
+#
+# The Sparky Stereo OS Lean Code policy projects comment-bearing text into its machine form in the
+# package that owns it (our builds) or at install time (dpkg-stereo, for packages from other
+# sources); the packer never sweeps installed files. This stage only reads the image's source
+# folders: it counts every comment-bearing text file by format, takes the projection records that
+# dpkg-stereo keeps in /var/lib/dpkg-stereo, and writes the coverage manifest. An image is labelled
+# compliant only when every comment-bearing file is covered.
+#
+# Usage: sparkybackup-leancode <manifest.tsv> <summary.txt> <folder>...
+# Exit status: 0 compliant, 1 incomplete coverage (reported, not an error of the stage), 2 usage.
+
+import os
+import re
+import stat
+import sys
+
+HASH = 'hash'      # '#' to the end of the line: shell, Python, Perl, configuration, systemd, udev, YAML, TOML
+SEMI = 'ini'       # '#' or ';' at the start of a line: INI and desktop entries
+CLIKE = 'c-like'   # '//' and '/* */': C, C++, QML, JavaScript, GLSL, CSS
+MARKUP = 'markup'  # '<!-- -->': XML, HTML, SVG, policy and D-Bus files
+
+EXT = {
+    '.sh': ('shell', HASH), '.bash': ('shell', HASH), '.py': ('python', HASH), '.pl': ('perl', HASH),
+    '.pm': ('perl', HASH), '.conf': ('configuration', HASH), '.cfg': ('configuration', HASH),
+    '.yaml': ('yaml', HASH), '.yml': ('yaml', HASH), '.toml': ('toml', HASH), '.rules': ('udev', HASH),
+    '.service': ('systemd', SEMI), '.socket': ('systemd', SEMI), '.timer': ('systemd', SEMI),
+    '.target': ('systemd', SEMI), '.path': ('systemd', SEMI), '.mount': ('systemd', SEMI),
+    '.slice': ('systemd', SEMI), '.network': ('systemd', SEMI), '.link': ('systemd', SEMI),
+    '.ini': ('ini', SEMI), '.desktop': ('desktop', SEMI),
+    '.c': ('c', CLIKE), '.h': ('c', CLIKE), '.cpp': ('c++', CLIKE), '.hpp': ('c++', CLIKE), '.cc': ('c++', CLIKE),
+    '.hh': ('c++', CLIKE), '.qml': ('qml', CLIKE), '.js': ('javascript', CLIKE), '.mjs': ('javascript', CLIKE),
+    '.glsl': ('glsl', CLIKE), '.vert': ('glsl', CLIKE), '.frag': ('glsl', CLIKE), '.comp': ('glsl', CLIKE),
+    '.css': ('css', CLIKE), '.xml': ('xml', MARKUP), '.svg': ('svg', MARKUP), '.html': ('html', MARKUP),
+    '.htm': ('html', MARKUP), '.policy': ('xml', MARKUP), '.xsl': ('xml', MARKUP), '.ui': ('xml', MARKUP),
+}
+SHEBANG = [(re.compile(rb'^#!.*\b(ba|da|z|k)?sh\b'), 'shell'), (re.compile(rb'^#!.*python'), 'python'),
+           (re.compile(rb'^#!.*perl'), 'perl')]
+SKIP = ('/usr/share/doc/', '/usr/share/man/', '/usr/share/info/', '/usr/share/locale/', '/usr/share/common-licenses/')
+MAXSIZE = 4 << 20
+
+
+def classify(path, head):
+    base = os.path.basename(path)
+    ext = os.path.splitext(base)[1].lower()
+    if ext in EXT:
+        return EXT[ext]
+    for rx, lang in SHEBANG:
+        if rx.match(head):
+            return lang, HASH
+    if '/etc/' in path or path.endswith('rc'):
+        return 'configuration', HASH
+    return None
+
+
+def comment_bytes(data, family, lang):
+    n = 0
+    if family in (HASH, SEMI):
+        for i, line in enumerate(data.split(b'\n')):
+            s = line.lstrip()
+            if i == 0 and s.startswith(b'#!'):
+                continue
+            if s.startswith(b'#') or (family == SEMI and s.startswith(b';')):
+                if lang == 'python' and s.startswith((b'# -*-', b'# coding')):
+                    continue
+                n += len(line) + 1
+    elif family == CLIKE:
+        for m in re.finditer(rb'/\*.*?\*/|(?<![:"\'\\])//[^\n]*', data, re.S):
+            n += len(m.group(0))
+    elif family == MARKUP:
+        for m in re.finditer(rb'<!--.*?-->', data, re.S):
+            n += len(m.group(0))
+    return n
+
+
+def image_path(root, p):
+    # each source folder is one top folder of the image: /usr, or the packer's copy of /etc and /var
+    if root.rstrip('/') == '':
+        return p
+    return '/' + os.path.basename(root.rstrip('/')) + '/' + os.path.relpath(p, root)
+
+
+def projected_records(roots):
+    done = set()
+    for root in roots:
+        rec = os.path.join(root, 'lib/dpkg-stereo/files.tsv' if os.path.basename(root.rstrip('/')) == 'var'
+                           else 'var/lib/dpkg-stereo/files.tsv')
+        if os.path.isfile(rec):
+            for line in open(rec, errors='replace'):
+                f = line.split('\t')
+                if f and f[0].startswith('/'):
+                    done.add(f[0])
+    return done
+
+
+def main():
+    if len(sys.argv) < 4:
+        print(__doc__ or 'usage: sparkybackup-leancode <manifest.tsv> <summary.txt> <folder>...', file=sys.stderr)
+        return 2
+    manifest, summary, roots = sys.argv[1], sys.argv[2], sys.argv[3:]
+    done = projected_records(roots)
+    per = {}
+    with open(manifest, 'w') as out:
+        out.write('path\tformat\tbytes\tcomment_bytes\tprojected\n')
+        for root in roots:
+            for d, dirs, files in os.walk(root):
+                dirs[:] = [x for x in dirs if x not in ('proc', 'sys', 'dev', 'run')]
+                for f in files:
+                    p = os.path.join(d, f)
+                    try:
+                        st = os.lstat(p)
+                    except OSError:
+                        continue
+                    if not stat.S_ISREG(st.st_mode) or st.st_size == 0 or st.st_size > MAXSIZE:
+                        continue
+                    rel = image_path(root, p)
+                    if rel.startswith(SKIP):
+                        continue
+                    try:
+                        with open(p, 'rb') as fh:
+                            data = fh.read()
+                    except OSError:
+                        continue
+                    if b'\0' in data[:8192]:
+                        continue
+                    c = classify(rel, data[:256])
+                    if not c:
+                        continue
+                    lang, family = c
+                    cb = comment_bytes(data, family, lang)
+                    if cb == 0:
+                        continue
+                    pr = rel in done
+                    out.write(f'{rel}\t{lang}\t{len(data)}\t{cb}\t{"yes" if pr else "no"}\n')
+                    t = per.setdefault(lang, [0, 0, 0, 0])
+                    t[0] += 1; t[1] += len(data); t[2] += cb; t[3] += pr
+    files = sum(t[0] for t in per.values()); covered = sum(t[3] for t in per.values())
+    with open(summary, 'w') as s:
+        s.write('Lean Code coverage of the image (Sparky Stereo OS Lean Code policy)\n')
+        s.write(f'comment-bearing text files: {files}, projected: {covered}\n')
+        s.write(f'{"format":<15}{"files":>9}{"bytes":>14}{"comment bytes":>15}{"projected":>11}\n')
+        for lang in sorted(per, key=lambda k: -per[k][2]):
+            t = per[lang]
+            s.write(f'{lang:<15}{t[0]:>9}{t[1]:>14}{t[2]:>15}{t[3]:>11}\n')
+        s.write(f'{"total":<15}{files:>9}{sum(t[1] for t in per.values()):>14}{sum(t[2] for t in per.values()):>15}{covered:>11}\n')
+        state = 'compliant' if files and covered == files else 'NOT compliant: incomplete coverage'
+        s.write(f'Lean Code: {state}\n')
+    print(open(summary).read(), end='')
+    return 0 if files and covered == files else 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
