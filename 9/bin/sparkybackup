@@ -1160,16 +1160,9 @@ function iso {
 	SQUASHFSSIZE=`ls -s $WORKDIR/ISOTMP/live/filesystem.squashfs | awk -F " " '{print $1}'`
 	if [ "$TESTXORRISO" != "" ]
 	then
-		if [ "$SQUASHFSSIZE" -gt "3999999" ]
-		then
-			echo "$LOCAL29"
-			log_info "The compressed filesystem is larger than the iso9660 specification allows for a single file. You must try to reduce the amount of data you are backing up and try again. Otherwise, install genisoimage, remove xorriso and try again."
-			log_info "The squashfs size is $SQUASHFSSIZE (3999999 maximum)" >> $WORKDIR/sparkybackup.log
-			exit 1
-		else
-			echo "The squashfs size is $SQUASHFSSIZE (3999999 maximum)"
-			log_info "The squashfs size is $SQUASHFSSIZE (3999999 maximum)" >> $WORKDIR/sparkybackup.log
-		fi
+		# -iso-level 3 stores a file of 4 GiB or more in several extents, which Linux's iso9660 driver reads
+		echo "The squashfs size is $SQUASHFSSIZE"
+		log_info "The squashfs size is $SQUASHFSSIZE" >> $WORKDIR/sparkybackup.log
 	elif [ "$TESTGENISOIMAGE" != "" ] && [ "$TESTXORRISO" = "" ]
 	then
 		echo "The squashfs size is $SQUASHFSSIZE so iso image can be larger than 3.99GB"
@@ -1209,7 +1202,9 @@ function iso {
 		# create iso image via xorriso up to 4GB (default)
 		log_info "Creating $MYARCH iso image with $CREATEISO"
 		echo "Creating the iso file using xorriso"
-		$CREATEISO -as mkisofs -rock -omit-version-number -disable-deep-relocation -joliet -volid "$MYVOLID" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table $EFI_PARAMS -o "$WORKDIR/$CUSTOMISO" "$WORKDIR/ISOTMP"
+		# xorriso's own hybrid layout, as Debian's live images have it: BIOS boot from a stick through isohdpfx.bin,
+		# partition 1 from LBA 64 so the GPT has room, the EFI image as a GPT and MBR partition, and an Apple partition map
+		$CREATEISO -as mkisofs -R -r -J -joliet-long -l -cache-inodes -iso-level 3 -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin -partition_offset 16 -V "$MYVOLID" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table $EFI_PARAMS -isohybrid-gpt-basdat -isohybrid-apm-hfsplus -o "$WORKDIR/$CUSTOMISO" "$WORKDIR/ISOTMP"
 	else
 		# create iso image via genisoimage which can be larger than 4GB (xorriso has to be removed from your system)
 		log_info "Creating $MYARCH iso image with $CREATEISO"
@@ -1225,10 +1220,13 @@ function iso {
 		exit 1
 	fi
 
-	# create hybrid iso so it can be dd installed to a usb flash drive
-	echo "$LOCAL33"
-	log_info "Creating iso into a hybrid image so it can be imaged to a usb key or burned to optical media"
-	isohybrid -u $WORKDIR/$CUSTOMISO
+	# create hybrid iso so it can be dd installed to a usb flash drive (xorriso made it hybrid already)
+	if [ "$TESTXORRISO" = "" ]
+	then
+		echo "$LOCAL33"
+		log_info "Creating iso into a hybrid image so it can be imaged to a usb key or burned to optical media"
+		isohybrid -u $WORKDIR/$CUSTOMISO
+	fi
 	ISOSIZE=`ls -s $WORKDIR/$CUSTOMISO | awk -F " " '{print $1}'`
 	log_debug "iso size: $ISOSIZE"
 

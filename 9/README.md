@@ -33,6 +33,7 @@ grep
 grub-efi-amd64-signed
 hwdata
 iputils-ping
+isolinux
 keyboard-configuration
 laptop-detect
 live-boot, live-config, live-config-systemd, live-boot-initramfs-tools
