@@ -124,7 +124,7 @@ LIVEUSER="`echo $LIVEUSER | awk '{print tolower ($0)}'`"
 if [ "$WORKDIR" = "" ]
 then
 	BASEWORKDIR="/home/sparkybackup-sys"
-	WORKDIR="$BASEWORDDIR/sparkybackup-sys"
+	WORKDIR="$BASEWORKDIR/sparkybackup-sys"
 else
 	BASEWORKDIR="$WORKDIR"
 	WORKDIR="$WORKDIR/sparkybackup-sys"
@@ -376,7 +376,7 @@ function cdfs {
 	fi
 		
 	VAREXCLUDES="--exclude '*.log' --exclude '*.pid' --exclude '*.bak' --exclude '*.[0-9].gz' --exclude '*.deb' --exclude 'kdecache*' "
-	SQUASHEXCLUDES="-e /initrd.img.old /vmlinuz.old /root/.synaptic/log/*.log /root/.bash_history"
+	SQUASHEXCLUDES="-e /initrd.img.old /vmlinuz.old /root/.synaptic/log/*.log /root/.bash_history $BASEWORKDIR"
 
 	# copy trackerd stuff as live-initramfs disables it
 	if [ -f /etc/xdg/autostart/tracker-applet.desktop ]
