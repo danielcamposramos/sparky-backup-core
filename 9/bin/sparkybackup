@@ -964,11 +964,20 @@ FOO
 
 	echo "$LOCAL27"
 	log_info "Copying your kernel and initrd for the livecd"
-	cp /boot/vmlinuz-$(uname -r) $WORKDIR/ISOTMP/live/vmlinuz
-	cp /boot/initrd.img-$(uname -r) $WORKDIR/ISOTMP/live/initrd.img
-	# configure it if you want to enable 2nd kernel in live session (example)
-	#cp /usr/lib/sparkybackup/live/initrd.img $WORKDIR/ISOTMP/live
-	#cp /usr/lib/sparkybackup/live/vmlinuz $WORKDIR/ISOTMP/live
+	if [ "$LIVEKERNEL" = "" ]
+	then
+		LIVEKERNEL="`uname -r`"
+	fi
+	log_info "Live kernel: $LIVEKERNEL"
+	cp /boot/vmlinuz-$LIVEKERNEL $WORKDIR/ISOTMP/live/vmlinuz
+	cp /boot/initrd.img-$LIVEKERNEL $WORKDIR/ISOTMP/live/initrd.img
+	# a second kernel in the live session, as vmlinuz2 and initrd2.img
+	if [ "$LIVEKERNEL2" != "" ]
+	then
+		log_info "Second live kernel: $LIVEKERNEL2"
+		cp /boot/vmlinuz-$LIVEKERNEL2 $WORKDIR/ISOTMP/live/vmlinuz2
+		cp /boot/initrd.img-$LIVEKERNEL2 $WORKDIR/ISOTMP/live/initrd2.img
+	fi
 	mkdir -p $WORKDIR/ISOTMP/.disk 
 	cp /usr/lib/sparkybackup/.disk/* $WORKDIR/ISOTMP/.disk
 
@@ -1176,7 +1185,7 @@ function iso {
 		log_info "The squashfs size is $SQUASHFSSIZE so iso image can be larger than 3.99GB" >> $WORKDIR/sparkybackup.log
 	fi
 	
-	ARCH=`uname -r | grep "amd64" | awk '{print $1}'`
+	ARCH=`dpkg --print-architecture | grep "amd64"`
 
 	# check to see if the cd filesystem exists
 	if [ ! -f "$WORKDIR/ISOTMP/live/filesystem.squashfs" ]
