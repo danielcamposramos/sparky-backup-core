@@ -1,4 +1,19 @@
 -------------------------------------------------------------------------------
+  Version 20261015~sparky9~0 (2026-10-15)
+-------------------------------------------------------------------------------
+  * Sparky Backup Core Stereo, the fork for Sparky Stereo OS
+  * shim, MokManager and signed grub taken from Debian at every build
+  * hybrid layout from xorriso and files over 4 GiB in the iso
+  * boot menu typos fixed, findiso on Failsafe, Safe graphics entry
+  * work folder typo fixed and the work folder kept out of the squashfs
+  * system users of UIDs 500 to 999 kept
+  * shadow file of the image fixed with no regular user or several
+  * OUTDIR for the iso, its sums, package list and log
+  * LIVEKERNEL and LIVEKERNEL2 choose the live kernels
+  * sparkybackup-stereo with the Sparky Stereo OS profile
+  * Lean Code coverage stage of the Stereo profile
+
+-------------------------------------------------------------------------------
   Version 20261011~sparky9~0 (2026-10-11)
 -------------------------------------------------------------------------------
   * removed linux-image-amd64-signed-template from fresh uefi installation

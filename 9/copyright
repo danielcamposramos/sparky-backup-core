@@ -9,6 +9,16 @@ Upstream Author(s):
     Copyright (C) 2012-2024 Paweł "pavroo" Pijanowski <pavroo@onet.eu>
     Under GNU GPLv2
     
+    Files: sparkybackup-stereo, sparkybackup-leancode, stereo/gen-menus.py, lib/stereo/*
+    Copyright (C) 2026 Paweł "pavroo" Pijanowski <pavroo@onet.eu>
+    Copyright (C) 2026 Daniel Ramos (Capitain Jack) <Capitain_Jack@yahoo.com>
+    Under GNU GPLv3
+
+    Sparky Backup Core Stereo changes to sparkybackup (boot files from Debian,
+    hybrid layout, OUTDIR, LIVEKERNEL, the Stereo profile and its Lean Code stage)
+    Copyright (C) 2026 Daniel Ramos (Capitain Jack) <Capitain_Jack@yahoo.com>
+    Under GNU GPLv2
+
     File: sparkybackup
     Copyright (C) 2012-2020 Paweł "pavroo" Pijanowski <pavroo@onet.eu>
     Copyright (C) 2015 Piotr "MoroS" Mrożek <dnadesigned@gmail.com>

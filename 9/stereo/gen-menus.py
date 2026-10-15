@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+# Created by Paweł "pavroo" Pijanowski and Daniel Ramos (Capitain Jack) 2026/10/15
+# Copyright 2026 under the GNU GPL3 License
+# Last update 2026/10/15
 # Writes the Stereo profile's boot menus for sparky-backup-core-stereo (run from 9/: stereo/gen-menus.py lib/stereo lib/isolinux/isolinux.cfg):
 #   <out>/boot/grub/grub.cfg   (UEFI: shim, then Debian's signed GRUB)
 #   <out>/isolinux/isolinux.cfg (BIOS)
