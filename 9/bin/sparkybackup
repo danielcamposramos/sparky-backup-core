@@ -534,8 +534,9 @@ function cdfs {
 			#grep 'autologin' /etc/group >> $WORKDIR/dummysys/etc/group
 		done
 
-		OLDUSER=`grep '^[^:]*:[^:]*:[1-9][0-9][0-9][0-9]:' /etc/passwd | awk -F ":" '{print $1}'`
-		cat /etc/shadow | grep -v root | grep -v $OLDUSER > $WORKDIR/dummysys/etc/shadow
+		# root's and the regular users' passwords stay out; with no regular user (a chroot) or with several,
+		# a grep -v of their names failed or read the second name as a file
+		awk -F ":" 'NR == FNR { if ($3 >= 1000 && $3 <= 9999) olduser[$1] = 1; next } $1 != "root" && !($1 in olduser)' /etc/passwd /etc/shadow > $WORKDIR/dummysys/etc/shadow
 		chmod 644 $WORKDIR/dummysys/etc/group
 		chown root:root $WORKDIR/dummysys/etc/group
 		chmod 644 $WORKDIR/dummysys/etc/passwd
