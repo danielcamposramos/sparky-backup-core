@@ -45,8 +45,9 @@ FOO
 	# a second time, over the installer, as for a new user. root's Welcome Center launcher stays off;
 	# the live user's Welcome Center is unchanged.
 	mkdir -p /root/.config
-	if ! grep -q '^\[Module-plasma_welcome\]' /root/.config/kded5rc 2>/dev/null; then
-		printf '[Module-plasma_welcome]\nautoload=false\n' >> /root/.config/kded5rc
+	# kded names the module by its plugin file, kded_plasma_welcome
+	if ! grep -q '^\[Module-kded_plasma_welcome\]' /root/.config/kded5rc 2>/dev/null; then
+		printf '[Module-kded_plasma_welcome]\nautoload=false\n' >> /root/.config/kded5rc
 	fi
 
 	# Creating state file
