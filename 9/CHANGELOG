@@ -6,6 +6,8 @@
     the BIOS menu moved below the wordmark
   * PRESQUASHFS_HOOK: a program run on the folders about to be squashed (the Lean Code projection of the
     Sparky Stereo OS pipeline); empty by default, the environment's value wins
+  * Stereo menus on 32-bit UEFI: the live kernels start with nokaslr (Linux's mixed mode return trampoline is
+    mapped without execute permission at a randomized physical address, and the first firmware call faults)
 
 -------------------------------------------------------------------------------
   Version 20261016.1~sparky9~0 (2026-10-16)
