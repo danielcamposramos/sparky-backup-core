@@ -2,6 +2,7 @@
   Version 20261016~sparky9~0 (2026-10-16)
 -------------------------------------------------------------------------------
   * live session: the screen neither dims nor turns off and the machine does not sleep on its own (1186-sparky-stereo-live)
+  * live session: root's Welcome Center launcher off, so the installer is not covered by a second Welcome Center
   * Stereo profile: the re-issued Secure Boot certificate, code signing only
   * Stereo menus: MokManager on the firmware's text console, no extra wait before Debian's kernel
 

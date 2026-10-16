@@ -41,6 +41,14 @@ FOO
 		chown ${LIVE_USERNAME}:${LIVE_USERNAME} /home/${LIVE_USERNAME}/.config /home/${LIVE_USERNAME}/.config/powerdevilrc /home/${LIVE_USERNAME}/.config/kscreenlockerrc
 	fi
 
+	# The installer runs as root, and a KDE service it starts for root (kded) opens the Welcome Center
+	# a second time, over the installer, as for a new user. root's Welcome Center launcher stays off;
+	# the live user's Welcome Center is unchanged.
+	mkdir -p /root/.config
+	if ! grep -q '^\[Module-plasma_welcome\]' /root/.config/kded5rc 2>/dev/null; then
+		printf '[Module-plasma_welcome]\nautoload=false\n' >> /root/.config/kded5rc
+	fi
+
 	# Creating state file
 	touch /var/lib/live/config/sparky-stereo-live
 }
