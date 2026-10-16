@@ -1047,6 +1047,29 @@ FOO
 		REALFOLDERS=`echo $REALFOLDERS | sed -e 's!'"$e"'!!g'`
 	done
 
+	# a profile's hook on the folders about to be squashed (Sparky Stereo OS: the Lean Code projection of its
+	# pipeline). It works on the image's own files, so whoever runs the packer runs it on an overlay or a
+	# copy of the system; an empty PRESQUASHFS_HOOK (the default) skips it
+	if [ -n "$PRESQUASHFS_HOOK" ]
+	then
+		if [ ! -x "$PRESQUASHFS_HOOK" ]
+		then
+			echo "The pre-squashfs hook $PRESQUASHFS_HOOK is missing... exiting..."
+			log_info "The pre-squashfs hook $PRESQUASHFS_HOOK is missing"
+			exit 1
+		fi
+		echo "Pre-squashfs hook: $PRESQUASHFS_HOOK"
+		log_info "Pre-squashfs hook: $PRESQUASHFS_HOOK"
+		HOOKSTART=`date +%s`
+		if ! "$PRESQUASHFS_HOOK" $REALFOLDERS >> $WORKDIR/sparkybackup.log 2>&1
+		then
+			echo "The pre-squashfs hook failed, see the log... exiting..."
+			log_info "The pre-squashfs hook failed"
+			exit 1
+		fi
+		log_info "Pre-squashfs hook done in $(( `date +%s` - HOOKSTART )) s"
+	fi
+
 	# Lean Code (the Sparky Stereo OS profile; default off elsewhere): projection happens in the packages and at
 	# install time (dpkg-stereo), never here; this stage reads the image and reports its coverage
 	if [ "$LEANCODE" = "yes" ]

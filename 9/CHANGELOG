@@ -1,4 +1,13 @@
 -------------------------------------------------------------------------------
+  Version 20261016.2~sparky9~0 (2026-10-16)
+-------------------------------------------------------------------------------
+  * live session: Plasma Login Manager logs the live user in (0086-plasmalogin, from live-config's 0085-sddm)
+  * Stereo menus: the SparkyOS background, the GRUB one cropped to the screen and a 640x480 one for BIOS, with
+    the BIOS menu moved below the wordmark
+  * PRESQUASHFS_HOOK: a program run on the folders about to be squashed (the Lean Code projection of the
+    Sparky Stereo OS pipeline); empty by default, the environment's value wins
+
+-------------------------------------------------------------------------------
   Version 20261016.1~sparky9~0 (2026-10-16)
 -------------------------------------------------------------------------------
   * live session: the screen neither dims nor turns off and the machine does not sleep on its own (1186-sparky-stereo-live)
