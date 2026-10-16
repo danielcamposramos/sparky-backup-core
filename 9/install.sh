@@ -36,6 +36,7 @@ if [ "$1" = "uninstall" ]; then
 	rm -f /lib/live/config/1183-installer-guide-icon
 	#rm -f /lib/live/config/1184-idesk-icon
 	rm -f /lib/live/config/1185-sparky-livefix
+	rm -f /lib/live/config/1186-sparky-stereo-live
 	rm -rf /usr/share/sparkybackup/idesk
 	rm -rf /usr/share/sparky/sparky-advanced-installer
 	rm -rf /usr/share/sparky/sparky-backup-core

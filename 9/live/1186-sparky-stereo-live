@@ -1,0 +1,48 @@
+#!/bin/sh
+
+## Copyright (C) 2026 Paweł Pijanowski <pavroo@onet.eu> and Daniel Ramos (Capitain Jack) <Capitain_Jack@yahoo.com>
+##
+## This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.
+## This is free software, and you are welcome to redistribute it
+## under certain conditions; see COPYING for details.
+
+Sparky_Stereo_Live ()
+{
+	# Sparky Stereo OS: the live session is for trying the system, showing it and installing it.
+	# Its screen neither dims nor turns off and the machine does not sleep on its own, through a
+	# show or an installation of twenty minutes and more; the installed system keeps the edition's
+	# power settings (/etc/xdg/powerdevilrc). A low battery still dims, turns off and sleeps.
+	if [ -e /var/lib/live/config/sparky-stereo-live ]; then
+		return
+	fi
+
+	if [ -d /home/${LIVE_USERNAME} ]; then
+		mkdir -p /home/${LIVE_USERNAME}/.config
+		cat > /home/${LIVE_USERNAME}/.config/powerdevilrc << FOO
+[AC][Display]
+DimDisplayWhenIdle=false
+TurnOffDisplayWhenIdle=false
+
+[AC][SuspendAndShutdown]
+AutoSuspendAction=0
+
+[Battery][Display]
+DimDisplayWhenIdle=false
+TurnOffDisplayWhenIdle=false
+
+[Battery][SuspendAndShutdown]
+AutoSuspendAction=0
+FOO
+		cat > /home/${LIVE_USERNAME}/.config/kscreenlockerrc << FOO
+[Daemon]
+Autolock=false
+LockOnResume=false
+FOO
+		chown ${LIVE_USERNAME}:${LIVE_USERNAME} /home/${LIVE_USERNAME}/.config /home/${LIVE_USERNAME}/.config/powerdevilrc /home/${LIVE_USERNAME}/.config/kscreenlockerrc
+	fi
+
+	# Creating state file
+	touch /var/lib/live/config/sparky-stereo-live
+}
+
+Sparky_Stereo_Live
