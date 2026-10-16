@@ -64,6 +64,7 @@ g.append(f'menuentry "{NAME} with Debian\'s signed kernel (no key needed, no ste
          f'    initrd  /live/initrd2.img\n}}\n')
 g.append('if [ "$grub_platform" = efi ]; then\n'
          '    menuentry "Enrol the Sparky Stereo OS key (MokManager, Secure Boot)" {\n'
+         '        terminal_output console\n'
          '        chainloader /EFI/boot/mmx64.efi\n'
          '    }\n'
          'fi\n')
