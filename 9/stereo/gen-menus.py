@@ -7,7 +7,9 @@
 #   <out>/isolinux/isolinux.cfg (BIOS)
 # Every UEFI live entry tries the stereo kernel (live/vmlinuz) first. Under Secure Boot GRUB refuses it
 # until the Sparky Stereo OS key is enrolled ("bad shim loader signature"); the entry then boots
-# Debian's signed kernel (live/vmlinuz2) instead, so a machine without the key still starts.
+# Debian's signed kernel (live/vmlinuz2) instead, so a machine without the key still starts. Because an
+# error was printed, GRUB shows it with the message below for up to 10 seconds ("Press any key to
+# continue...", grub_wait_after_message in grub-core/normal/menu.c) and then boots.
 import os, sys
 
 out = sys.argv[1]
@@ -44,7 +46,6 @@ def grub_entry(title, args, indent=''):
             f'{i}        initrd /live/initrd.img\n'
             f'{i}    else\n'
             f'{i}        echo "{FALLBACK_MSG}"\n'
-            f'{i}        sleep 4\n'
             f'{i}        linux /live/vmlinuz2 {args}\n'
             f'{i}        initrd /live/initrd2.img\n'
             f'{i}    fi\n'
