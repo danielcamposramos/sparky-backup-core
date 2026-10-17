@@ -2,7 +2,7 @@
 
 . /usr/lib/live/config.sh
 
-## Copyright (C) 2026 Paweł Pijanowski <pavroo@onet.eu> and Daniel Ramos (Capitain Jack) <Capitain_Jack@yahoo.com>
+## Copyright (C) 2026 Paweł "pavroo" Pijanowski and Daniel Ramos (Capitain Jack) <Capitain_Jack@yahoo.com>
 ## Made from live-config's 0085-sddm (Copyright (C) 2016-2020 The Debian Live team,
 ## Copyright (C) 2006-2015 Daniel Baumann), for Plasma Login Manager.
 ##
