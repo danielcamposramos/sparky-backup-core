@@ -1,4 +1,12 @@
 -------------------------------------------------------------------------------
+  Version 20261020~sparky9~0 (2026-10-20)
+-------------------------------------------------------------------------------
+  * Stage BIOS modules, Memtest86+ and the IA32 UEFI CD image from installed Debian
+    dependencies at ISO creation, alongside the existing signed amd64 UEFI path.
+    The edition package no longer ships old copies of those compiled programs.
+  * Preserve profile menus and the IA32 mixed-mode kernel command line.
+
+-------------------------------------------------------------------------------
   Version 20261016.2~sparky9~0 (2026-10-16)
 -------------------------------------------------------------------------------
   * live session: Plasma Login Manager logs the live user in (0086-plasmalogin, from live-config's 0085-sddm)

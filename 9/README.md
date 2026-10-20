@@ -31,6 +31,7 @@ findutils
 gawk
 grep
 grub-efi-amd64-signed
+grub-efi-ia32-unsigned
 hwdata
 iputils-ping
 isolinux
@@ -38,6 +39,7 @@ keyboard-configuration
 laptop-detect
 live-boot, live-config, live-config-systemd, live-boot-initramfs-tools
 locales
+memtest86+ (>= 8.10)
 mount
 mtools
 nano
@@ -50,6 +52,7 @@ shim-signed
 sparky-backup-desktop (>= 20180729) | sparky-server
 sparky-info
 squashfs-tools
+syslinux-common
 syslinux-utils
 systemd
 systemd-sysv

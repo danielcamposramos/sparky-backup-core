@@ -821,6 +821,10 @@ function cdfs {
 		then
 			rsync -a $BOOTMENUS/boot/ $WORKDIR/ISOTMP/boot/
 		fi
+		if ! python3 /usr/lib/sparkybackup/stage-boot-files.py "$WORKDIR/ISOTMP"
+		then
+			exit_with_message "Cannot stage boot files from the installed Debian packages" 1
+		fi
 		efi_boot_files
 			
 		if [ "$TESTXORRISO" = "" ]
