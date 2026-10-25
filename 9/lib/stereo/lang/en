@@ -1,0 +1,4 @@
+NAME="English"
+ENROLL_TITLE="Secure Boot: enroll the Sparky Stereo OS key"
+NO_KEY="Secure Boot is on, and this computer does not know the Sparky Stereo OS key yet. Choose “Secure Boot: enroll the Sparky Stereo OS key” (selected in the menu that follows) to enroll it once, or turn Secure Boot off in “uEFI firmware setup”. Esc: go on now."
+STEPS="MokManager starts now (English only). Press a key when it asks, then choose: Enroll key from disk, the disk shown, EFI, boot, {cert}, Continue, Yes, Reboot. Then start Sparky Stereo OS again. Esc: start it now."

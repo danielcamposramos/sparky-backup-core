@@ -1,0 +1,3 @@
+NAME="繁體中文"
+NO_KEY="安全開機已開啟，但這台電腦還不認得 Sparky Stereo OS 的金鑰。請選擇「Secure Boot: enroll the Sparky Stereo OS key」（在接下來的選單中已選取）一次性註冊金鑰，或在「uEFI firmware setup」中關閉安全開機。Esc：立即繼續。"
+STEPS="現在將啟動 MokManager（僅英文）。提示時按任意鍵，然後依序選擇：Enroll key from disk、顯示的磁碟、EFI、boot、{cert}、Continue、Yes、Reboot。之後重新啟動 Sparky Stereo OS。Esc：立即啟動。"

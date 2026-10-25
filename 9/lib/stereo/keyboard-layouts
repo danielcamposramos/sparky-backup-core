@@ -1,0 +1,28 @@
+# The keyboard layout of a live session started in a locale (live-config keyboard-layouts=), read by gen-menus.py;
+# a locale without a line keeps the layout live-config chooses.
+bg_BG	bg
+cs_CZ	cz
+da_DK	dk
+de_DE	de
+el_GR	gr
+en_GB	gb
+es_ES	es
+fi_FI	fi
+fr_FR	fr
+hr_HR	hr
+hu_HU	hu
+it_IT	it
+ja_JP	jp
+ko_KR	kr
+nl_NL	nl
+no_NO	no
+pl_PL	pl
+pt_BR	br
+pt_PT	pt
+ro_RO	ro
+ru_RU	ru
+sk_SK	sk
+sl_SI	si
+sv_SE	se
+tr_TR	tr
+uk_UA	ua
