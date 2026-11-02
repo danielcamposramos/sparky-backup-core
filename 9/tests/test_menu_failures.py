@@ -103,12 +103,16 @@ class MenuFailures(unittest.TestCase):
         self.fails_before_output(self.generate(),'STEPS must name')
 
     def test_U49_success_all_languages(self):
-        result=self.generate('de_DE zh_TW');self.assertEqual(result.returncode,0,result.stderr)
+        result=self.generate('de_DE zh_CN zh_TW');self.assertEqual(result.returncode,0,result.stderr)
         for code in ('pl_PL','pt_BR','fr_FR','de_DE','ja_JP','ko_KR','zh_CN','zh_TW','en_GB'):
             self.assertIn(f'locales={code}.UTF-8',self.grub.read_text())
             self.assertIn(f'locales={code}.UTF-8',self.bios.read_text())
         for name in ('English','Polski','Português','Français','Deutsch','日本語','한국어','简体中文','繁體中文'):
             self.assertEqual(self.grub.read_text().count(f'echo "{name}: '),2,name)
+        labels=re.findall(r'^label (.+)$', self.bios.read_text(), re.MULTILINE)
+        self.assertEqual(len(labels), len(set(labels)), 'BIOS language choices must have distinct targets')
+        self.assertIn('live-zh_CN', labels)
+        self.assertIn('live-zh_TW', labels)
         self.assertIn('edition.der',self.grub.read_text())
         self.assertNotIn('vmlinuz2',self.grub.read_text())
 

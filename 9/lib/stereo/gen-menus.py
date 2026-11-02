@@ -261,7 +261,7 @@ def isolinux_cfg(head, name, label, tree, first_page):
           entry('live', '%s (live)' % name, '%s quiet splash' % CFG)]
     for english, locale, keys in [l for l in langs if l[1] in first_page]:
         native = native_name(english, locale)
-        il.append(entry('live' + locale.split('_')[0], '%s (live, %s)' % (name, native),
+        il.append(entry('live-' + locale, '%s (live, %s)' % (name, native),
                         '%s %s quiet splash' % (CFG, lang_args(locale, keys))))
     for n, (release, kernel, initrd) in enumerate(ks[1:]):
         il.append(entry('livekernel%d' % n, '%s (live, %s)' % (name, release), '%s quiet splash' % CFG, kernel, initrd))
@@ -274,7 +274,7 @@ def isolinux_cfg(head, name, label, tree, first_page):
     if langs:
         il.append('menu begin More Languages...\n')
         for english, locale, keys in langs:
-            il.append(entry('live', '%s %s' % (name, english), '%s quiet splash %s' % (CFG, lang_args(locale, keys))))
+            il.append(entry('language-' + locale, '%s %s' % (name, english), '%s quiet splash %s' % (CFG, lang_args(locale, keys))))
         il.append('menu end\n')
     il += ['label memtest\n\tmenu label Memory Test\n\tkernel /isolinux/memtest\n\tappend -\n',
            'label hdt\n\tmenu label Hardware Detection\n\tkernel /isolinux/hdt.c32\n\tappend -\n']
