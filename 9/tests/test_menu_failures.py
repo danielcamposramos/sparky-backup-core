@@ -113,6 +113,8 @@ class MenuFailures(unittest.TestCase):
         self.assertEqual(len(labels), len(set(labels)), 'BIOS language choices must have distinct targets')
         self.assertIn('live-zh_CN', labels)
         self.assertIn('live-zh_TW', labels)
+        self.assertIn('Name Chinese TW', self.grub.read_text())
+        self.assertNotIn('Chinese TW CN', self.grub.read_text())
         self.assertIn('edition.der',self.grub.read_text())
         self.assertNotIn('vmlinuz2',self.grub.read_text())
 
