@@ -1,4 +1,18 @@
 -------------------------------------------------------------------------------
+  Version 20261025~sparky9~0 (2026-10-25)
+-------------------------------------------------------------------------------
+  * The Stereo profile writes its boot menus at every run from what the image and the medium hold
+    (stereo/gen-menus.py): the default live kernel and every further kernel in /boot, each with its entry;
+    the Secure Boot enrolment when MokManager and the certificate are on the EFI image, its steps naming the
+    certificate's file; the languages of the base menus, with each locale's keyboard layout from
+    stereo/keyboard-layouts; LIVELANGUAGES puts some on the first page. No second Debian kernel, no fixed
+    kernel names, no nokaslr: the edition's kernels keep KASLR on 32-bit UEFI.
+  * Under Secure Boot, a kernel shim refuses leads to the explanation in the nine required languages and the menu
+    again with the enrolment selected; the texts are in stereo/lang/.
+  * The profile's kernel, menus and certificate take the build's SPARKY_LIVEKERNEL, SPARKY_BOOTMENUS and
+    SPARKY_MOKCERT, so the image's own settings keep their defaults.
+
+-------------------------------------------------------------------------------
   Version 20261020~sparky9~0 (2026-10-20)
 -------------------------------------------------------------------------------
   * Stage BIOS modules, Memtest86+ and the IA32 UEFI CD image from installed Debian

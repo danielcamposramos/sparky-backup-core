@@ -1005,11 +1005,35 @@ FOO
 		cp /boot/vmlinuz-$LIVEKERNEL2 $WORKDIR/ISOTMP/live/vmlinuz2
 		cp /boot/initrd.img-$LIVEKERNEL2 $WORKDIR/ISOTMP/live/initrd2.img
 	fi
+	# the Stereo profile puts every further kernel the image holds on the medium too, under its release name
+	if [ "$SPARKYBACKUP_PROFILE" = "stereo" ]
+	then
+		for k in /boot/vmlinuz-*
+		do
+			r="${k#/boot/vmlinuz-}"
+			if [ "$r" != "$LIVEKERNEL" ] && [ -f "/boot/initrd.img-$r" ]
+			then
+				log_info "Further live kernel: $r"
+				cp "$k" "$WORKDIR/ISOTMP/live/vmlinuz-$r"
+				cp "/boot/initrd.img-$r" "$WORKDIR/ISOTMP/live/initrd.img-$r"
+			fi
+		done
+	fi
 	mkdir -p $WORKDIR/ISOTMP/.disk 
 	cp /usr/lib/sparkybackup/.disk/* $WORKDIR/ISOTMP/.disk
 	if [ "$BOOTMENUS" != "" ] && [ -d $BOOTMENUS/.disk ]
 	then
 		cp $BOOTMENUS/.disk/* $WORKDIR/ISOTMP/.disk
+	fi
+	# the Stereo profile writes its boot menus from what the image and the medium hold (stereo/gen-menus.py): the
+	# kernels, the Secure Boot enrolment when MokManager and the certificate are on the EFI image, the languages
+	if [ "$SPARKYBACKUP_PROFILE" = "stereo" ] && [ -f "$BOOTMENUS/gen-menus.py" ]
+	then
+		if ! python3 "$BOOTMENUS/gen-menus.py" "$WORKDIR/ISOTMP" --label "$ISOLABEL" --live-label "$LIVECDLABEL" --languages "$LIVELANGUAGES"
+		then
+			exit_with_message "Cannot write the Stereo profile's boot menus" 1
+		fi
+		log_info "Boot menus: `grep -c '^ *menuentry' $WORKDIR/ISOTMP/boot/grub/grub.cfg` GRUB entries, kernels `ls $WORKDIR/ISOTMP/live | grep '^vmlinuz' | tr '\n' ' '`"
 	fi
 
 	# fix sddm conf

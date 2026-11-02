@@ -1,0 +1,3 @@
+NAME="Polski"
+NO_KEY="Secure Boot jest włączony, a ten komputer nie zna jeszcze klucza Sparky Stereo OS. Wybierz „Secure Boot: enroll the Sparky Stereo OS key” (zaznaczone w następnym menu), aby jednorazowo zarejestrować klucz, albo wyłącz Secure Boot w „uEFI firmware setup”. Esc: dalej."
+STEPS="Teraz uruchomi się MokManager (tylko po angielsku). Gdy poprosi, naciśnij klawisz, potem wybierz: Enroll key from disk, pokazany dysk, EFI, boot, {cert}, Continue, Yes, Reboot. Potem uruchom ponownie Sparky Stereo OS. Esc: uruchom teraz."

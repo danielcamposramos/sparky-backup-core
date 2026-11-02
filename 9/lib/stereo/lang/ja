@@ -1,0 +1,3 @@
+NAME="日本語"
+NO_KEY="セキュアブートが有効ですが、このコンピューターはまだ Sparky Stereo OS の鍵を知りません。「Secure Boot: enroll the Sparky Stereo OS key」(次のメニューで選択済み) を選んで鍵を一度だけ登録するか、「uEFI firmware setup」でセキュアブートを無効にしてください。Esc: すぐに続行。"
+STEPS="これから MokManager (英語のみ) が起動します。求められたらキーを押し、次の順に選んでください: Enroll key from disk、表示されたディスク、EFI、boot、{cert}、Continue、Yes、Reboot。その後 Sparky Stereo OS をもう一度起動します。Esc: すぐに起動。"
