@@ -1,5 +1,5 @@
 # The keyboard layout of a live session started in a locale (live-config keyboard-layouts=), read by gen-menus.py;
-# a locale without a line keeps the layout live-config chooses.
+# Every locale has a line; default explicitly keeps the layout live-config chooses.
 bg_BG	bg
 cs_CZ	cz
 da_DK	dk
@@ -26,3 +26,12 @@ sl_SI	si
 sv_SE	se
 tr_TR	tr
 uk_UA	ua
+ar_AE	default
+bn_BD	default
+he_IL	default
+hi_IN	default
+id_ID	default
+th_TH	default
+ur_PK	default
+zh_CN	default
+zh_TW	default

@@ -26,6 +26,7 @@ enrolment selected (GRUB puts "default" back after an entry, grub_menu_execute_e
 hence configfile and sparky_default). The explanation shows only when GRUB set shim_lock (Secure Boot on,
 grub_shim_lock_verifier_setup). sleep --interruptible stops on Esc, F4 or Shift (grub_key_is_interrupt).
 """
+from functools import lru_cache
 import argparse
 import os
 import re
@@ -35,22 +36,45 @@ import unicodedata
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_MENU = os.environ.get('SPARKYBACKUP_BASE_MENU', '/usr/lib/sparkybackup/boot/grub/grub.cfg')
 REQUIRED = ['en', 'pl', 'pt_BR', 'fr', 'de', 'ja', 'ko', 'zh_CN', 'zh_TW']
+REQUIRED_LOCALES = {'en_GB', 'pl_PL', 'pt_BR', 'fr_FR', 'de_DE', 'ja_JP', 'ko_KR', 'zh_CN', 'zh_TW'}
 COLUMNS = 98   # GRUB's gfxterm at 800x600 (config.cfg) with Unifont 16: 100 columns
 LIVE = 'boot=live components'
 FIND = 'findiso=${iso_path}'
 CFG = 'boot=live config'
 
 
+@lru_cache(maxsize=None)
 def strings(code):
+    path = os.path.join(HERE, 'lang', code)
     values = {}
-    try:
-        for line in open(os.path.join(HERE, 'lang', code), encoding='utf-8'):
-            if '=' in line:
-                k, v = line.rstrip('\n').split('=', 1)
-                values[k] = v.strip().strip('"')
-    except OSError:
-        pass
+    with open(path, encoding='utf-8') as stream:
+        for number, line in enumerate(stream, 1):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' not in line:
+                raise ValueError(f'{path}:{number}: expected KEY="text"')
+            key, value = line.split('=', 1)
+            if key in values or not value.startswith('"') or not value.endswith('"'):
+                raise ValueError(f'{path}:{number}: duplicate key or invalid quoted value: {key}')
+            text = value[1:-1]
+            if not text.strip() or set('$"\\') & set(text):
+                raise ValueError(f'{path}:{number}: empty or unsafe text: {key}')
+            values[key] = text
+    required = {'NAME', 'NO_KEY', 'STEPS'} | ({'ENROLL_TITLE'} if code == 'en' else set())
+    missing = required - values.keys()
+    if missing:
+        raise ValueError(f'{path}: missing required keys: {", ".join(sorted(missing))}')
+    if '{cert}' not in values['STEPS']:
+        raise ValueError(f'{path}: STEPS must name the {{cert}} file')
     return values
+
+
+def native_name(english, locale):
+    # Only declared catalogues supply native labels; the other menu names are
+    # authored in the base menu, not obtained through failed catalogue lookups.
+    code = locale if locale in REQUIRED else locale.split('_')[0]
+    return strings(code)['NAME'] if code in REQUIRED else english
 
 
 def width(text):
@@ -84,42 +108,55 @@ def echo_lines(key, cert, indent):
     out = []
     for code in REQUIRED:
         s = strings(code)
-        if key not in s:
-            continue
         text = s[key].replace('{cert}', cert)
         assert not set('$"\\') & set(text), (code, key)
-        for line in wrap('%s: %s' % (s.get('NAME', code), text)):
+        for line in wrap('%s: %s' % (s['NAME'], text)):
             out.append('%secho "%s"' % (indent, line))
     return out
 
 
+@lru_cache(maxsize=None)
 def languages():
-    """(English name, locale, keyboard layout or '') of the base menus' language submenu."""
+    """Require all edition locales and an explicit layout policy for every entry."""
     found = []
-    try:
-        text = open(BASE_MENU, encoding='utf-8').read()
-    except OSError:
-        return found
-    for m in re.finditer(r'menuentry\s+["\']\S+\s+([^"\']+)["\']\s*\{([^}]*)\}', text):
-        locale = re.search(r'locales=(\S+)', m.group(2))
+    with open(BASE_MENU, encoding='utf-8') as stream:
+        text = stream.read()
+    table = layouts()
+    seen = set()
+    for match in re.finditer(r'menuentry\s+["\']\S+\s+([^"\']+)["\']\s*\{([^}]*)\}', text):
+        locale = re.search(r'locales=(\S+)', match.group(2))
         if not locale:
             continue
-        keys = re.search(r'keyboard-layouts=(\S+)', m.group(2))
+        keys = re.search(r'keyboard-layouts=(\S+)', match.group(2))
         loc = locale.group(1).replace('.UTF-8', '')
-        found.append((m.group(1).strip(), loc, keys.group(1) if keys else layouts().get(loc, '')))
+        if loc in seen:
+            raise ValueError(f'{BASE_MENU}: duplicate locale {loc}')
+        seen.add(loc)
+        if not keys and loc not in table:
+            raise ValueError(f'{HERE}/keyboard-layouts: missing policy for {loc}')
+        found.append((match.group(1).strip(), loc, keys.group(1) if keys else table[loc]))
+    missing = REQUIRED_LOCALES - seen
+    if missing:
+        raise ValueError(f'{BASE_MENU}: missing required locales: {", ".join(sorted(missing))}')
     return found
 
 
+@lru_cache(maxsize=None)
 def layouts():
-    """locale -> keyboard layout, from the profile's keyboard-layouts file."""
+    """locale -> layout; `default` explicitly keeps live-config's locale policy."""
+    path = os.path.join(HERE, 'keyboard-layouts')
     table = {}
-    try:
-        for line in open(os.path.join(HERE, 'keyboard-layouts'), encoding='utf-8'):
+    with open(path, encoding='utf-8') as stream:
+        for number, line in enumerate(stream, 1):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
             parts = line.split()
-            if len(parts) == 2 and not line.startswith('#'):
-                table[parts[0]] = parts[1]
-    except OSError:
-        pass
+            if len(parts) != 2 or parts[0] in table:
+                raise ValueError(f'{path}:{number}: malformed or duplicate layout row')
+            table[parts[0]] = '' if parts[1] == 'default' else parts[1]
+    if not table:
+        raise ValueError(f'{path}: empty keyboard layout table')
     return table
 
 
@@ -179,14 +216,14 @@ def grub_cfg(name, tree, first_page):
     default = ks[0] if ks else ('', '/live/vmlinuz', '/live/initrd.img')
     g.append(entry('%s (live)' % name, '%s quiet splash %s' % (LIVE, FIND), default[1], default[2]))
     for english, locale, keys in [l for l in langs if l[1] in first_page]:
-        native = strings(locale) .get('NAME') or strings(locale.split('_')[0]).get('NAME') or english
+        native = native_name(english, locale)
         g.append(entry('%s (live, %s)' % (name, native), '%s %s quiet splash %s' % (LIVE, lang_args(locale, keys), FIND),
                        default[1], default[2]))
     for release, kernel, initrd in ks[1:]:
         g.append(entry('%s (live, %s)' % (name, release), '%s quiet splash %s' % (LIVE, FIND), kernel, initrd))
     if cert:
         # MokManager is a 64-bit program: only on 64-bit UEFI (GRUB's script has no &&: one if inside the other)
-        title = strings('en').get('ENROLL_TITLE', 'Secure Boot: enroll the key')
+        title = strings('en')['ENROLL_TITLE']
         g.append('\n'.join(['if [ "$grub_platform" = efi ]; then',
                             '    if [ "$grub_cpu" = x86_64 ]; then',
                             '        menuentry "%s" --id sparky-enroll {' % title,
@@ -223,7 +260,7 @@ def isolinux_cfg(head, name, label, tree, first_page):
     il = [head.replace('__LIVECDLABEL__', label).replace('__LIVELABEL__', name), '',
           entry('live', '%s (live)' % name, '%s quiet splash' % CFG)]
     for english, locale, keys in [l for l in langs if l[1] in first_page]:
-        native = strings(locale).get('NAME') or strings(locale.split('_')[0]).get('NAME') or english
+        native = native_name(english, locale)
         il.append(entry('live' + locale.split('_')[0], '%s (live, %s)' % (name, native),
                         '%s %s quiet splash' % (CFG, lang_args(locale, keys))))
     for n, (release, kernel, initrd) in enumerate(ks[1:]):
@@ -255,16 +292,28 @@ def main():
     first_page = a.languages.split()
     if not kernels(tree):
         sys.exit('gen-menus: no kernel in %s/live' % tree)
+    # Validate every input before replacing any previously generated menu.
+    for code in REQUIRED:
+        strings(code)
+    known = {locale for _, locale, _ in languages()}
+    unknown = set(first_page) - known
+    if unknown:
+        raise ValueError('Requested first-page locales are absent from the base menu: ' + ', '.join(sorted(unknown)))
+    with open(os.path.join(HERE, 'isolinux-head.cfg'), encoding='utf-8') as stream:
+        head = stream.read().rstrip('\n')
+    if not head.strip():
+        raise ValueError(f'{HERE}/isolinux-head.cfg: empty BIOS menu header')
+    grub = grub_cfg(a.live_label, tree, first_page)
+    isolinux = isolinux_cfg(head, a.live_label, a.label, tree, first_page)
     os.makedirs(os.path.join(tree, 'boot/grub'), exist_ok=True)
-    with open(os.path.join(tree, 'boot/grub/grub.cfg'), 'w', encoding='utf-8') as f:
-        f.write(grub_cfg(a.live_label, tree, first_page))
-    head = open(os.path.join(HERE, 'isolinux-head.cfg'), encoding='utf-8').read().rstrip('\n')
+    with open(os.path.join(tree, 'boot/grub/grub.cfg'), 'w', encoding='utf-8') as stream:
+        stream.write(grub)
     os.makedirs(os.path.join(tree, 'isolinux'), exist_ok=True)
-    with open(os.path.join(tree, 'isolinux/isolinux.cfg'), 'w', encoding='utf-8') as f:
-        f.write(isolinux_cfg(head, a.live_label, a.label, tree, first_page))
+    with open(os.path.join(tree, 'isolinux/isolinux.cfg'), 'w', encoding='utf-8') as stream:
+        stream.write(isolinux)
     try:
         os.unlink(os.path.join(tree, 'isolinux/isolinux-head.cfg'))
-    except OSError:
+    except FileNotFoundError:
         pass
     os.makedirs(os.path.join(tree, '.disk'), exist_ok=True)
     with open(os.path.join(tree, '.disk/info'), 'w', encoding='utf-8') as f:
@@ -281,4 +330,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (OSError, ValueError) as error:
+        sys.exit(f'Boot menu data could not be read or written: {error}. Repair the named file/package and regenerate the image.')

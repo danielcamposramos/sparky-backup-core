@@ -1,4 +1,11 @@
 -------------------------------------------------------------------------------
+  Version 20261101~sparky9~0 (2026-11-01)
+-------------------------------------------------------------------------------
+  * Require boot menu catalogues, language choices and explicit keyboard policies
+  * Stop with a repair instruction before generating menus from incomplete data
+  * Add the Traditional Chinese language choice to the base menu
+
+-------------------------------------------------------------------------------
   Version 20261025~sparky9~0 (2026-10-25)
 -------------------------------------------------------------------------------
   * The Stereo profile writes its boot menus at every run from what the image and the medium hold
